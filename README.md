@@ -1,7 +1,6 @@
 # -- Grupp 20 --
 
 ## Members of the group
--- Replace with student information --
 * William Gustafsson ???@bth.se
 * Christoffer Hedin ???@bth.se
 * Kalle Karlgren kakl20@bth.se
