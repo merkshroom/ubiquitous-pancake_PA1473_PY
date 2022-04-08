@@ -5,7 +5,7 @@
 * Christoffer Hedin ???@bth.se
 * Kalle Karlgren kakl20@student.bth.se
 * Simon Karlsson ???@bth.se
-* Mate Khaddouj ???@bth.se
+* Mate Khaddouj maog21@bth.se
 * Jacob Torudd ???@bth.se
 
 ## Project Description
