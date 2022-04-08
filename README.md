@@ -1,9 +1,13 @@
-# -- Replace with the name of your project --
+# -- Grupp 20 --
 
 ## Members of the group
 -- Replace with student information --
-* Adam Svensson adv@bth.se
-* Albin Persson alo@bth.se
+* William Gustafsson ???@bth.se
+* Christoffer Hedin ???@bth.se
+* Kalle Karlgren kakl20@bth.se
+* Simon Karlsson ???@bth.se
+* Mate Khaddouj ???@bth.se
+* Jacob Torudd ???@bth.se
 
 ## Project Description
 -- Place a short description of the project so that the reader know what the goal of the repository is --
