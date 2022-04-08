@@ -6,7 +6,7 @@
 * Kalle Karlgren kakl20@student.bth.se
 * Simon Karlsson ???@bth.se
 * Mate Khaddouj maog21@bth.se
-* Jacob Torudd ???@bth.se
+* Jacob Torudd jato21@student.bth.se
 
 ## Project Description
 -- Place a short description of the project so that the reader know what the goal of the repository is --
