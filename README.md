@@ -2,7 +2,7 @@
 
 ## Members of the group
 * William Gustafsson aigu21@student.bth.se
-* Christoffer Hedin ???@bth.se
+* Christoffer Hedin chhe21@student.bth.se
 * Kalle Karlgren kakl20@student.bth.se
 * Simon Karlsson ???@bth.se
 * Mate Khaddouj maog21@bth.se
