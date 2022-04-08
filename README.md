@@ -3,7 +3,7 @@
 ## Members of the group
 * William Gustafsson aigu21@student.bth.se
 * Christoffer Hedin ???@bth.se
-* Kalle Karlgren kakl20@bth.se
+* Kalle Karlgren kakl20@student.bth.se
 * Simon Karlsson ???@bth.se
 * Mate Khaddouj ???@bth.se
 * Jacob Torudd ???@bth.se
