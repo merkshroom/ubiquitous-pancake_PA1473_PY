@@ -4,7 +4,7 @@
 * William Gustafsson aigu21@student.bth.se
 * Christoffer Hedin chhe21@student.bth.se
 * Kalle Karlgren kakl20@student.bth.se
-* Simon Karlsson ???@bth.se
+* Simon Karlsson siks21@bth.se
 * Mate Khaddouj maog21@bth.se
 * Jacob Torudd ???@bth.se
 
