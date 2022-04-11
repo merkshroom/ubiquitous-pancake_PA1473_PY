@@ -17,7 +17,18 @@ Front_button=Port.S1
 Light_sensor=Port.S3
 Ultrasonic_sensor=Port.S4
 
+ev3 = EV3Brick()
+
+
+truckStatus = None
+def updateTruckStatus(status):
+    if (status != truckStatus):
+        truckStatus = status
+        print(truckStatus)
+        ev3.screen.print(truckStatus)
+
 def main():
+    updateTruckStatus("Starting up")
     return 0
 
 if __name__ == '__main__':
