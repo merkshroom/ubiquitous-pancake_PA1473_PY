@@ -21,6 +21,7 @@ ev3 = EV3Brick()
 BLACK = 10
 WHITE = 40
 DRIVE_SPEED = 60
+PICKUP_SPEED = 30
 PROPORTIONAL_GAIN = 2.5
 drive = True
 pick_up = False
@@ -50,7 +51,35 @@ def follow_line() -> int:
     return 0
 
 def pick_up_object() -> int:
+    if not front_button.pressed():
+        ev3.drive(PICKUP_SPEED, 0)
+    else:
+        ev3.stop()
+        crane_motor.straight(100) # kolla senare vad det är
+        if drive == False:
+            ev3.drive(-PICKUP_SPEED,0)
+    
     return 0
+
+def pick_up_object_elevated() -> int:
+    crane_motor.straight(100)
+    if not front_button.pressed():
+        ev3.drive(PICKUP_SPEED, 0)
+    else:
+        ev3.stop() # kolla senare vad det är
+        crane_motor.straight(10)
+        if drive == False:
+            ev3.drive(-PICKUP_SPEED,0)
+    
+    return 0
+
+def failed_pick_up() -> int:
+    if not front_button.pressed():
+        print("failed to pick up an item")
+    return 0
+
+def pick_up_color(color) -> int:
+    pass
 
 def leave_area() -> int:
     return 0
