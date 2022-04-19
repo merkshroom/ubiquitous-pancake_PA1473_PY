@@ -20,6 +20,10 @@ ev3 = EV3Brick()
 robot = DriveBase(left_drive, right_drive, wheel_diameter=47, axle_track=128)
 
 BLACK = 10
+RED = 0
+YELLOW = 0
+GREEN = 0
+BLUE = 0
 WHITE = 40
 DRIVE_SPEED = 30
 PICKUP_SPEED = 15
@@ -34,7 +38,7 @@ done = False
 craneUp = False
 return_area = False
 truckStatus = "drive"
-threshold_angle = (BLACK + WHITE) / 2
+active_colour = YELLOW
 
 #ev3.reset()
 
@@ -48,9 +52,10 @@ def update_truck_status(status):
 
 
 
-def follow_line() -> int:
+def follow_line(colour) -> int:
     distance_to_next = ultrasonic_sensor.distance()
     if distance_to_next > 120:
+        threshold_angle = (colour + 10) / 2
         deviation_angle = light_sensor.reflection() - threshold_angle
         turn_rate = PROPORTIONAL_GAIN * deviation_angle
         robot.drive(DRIVE_SPEED, turn_rate)
@@ -112,8 +117,9 @@ def failed_pick_up() -> int:
         print("failed to pick up an item")
     return 0
 
-def pick_up_color(color) -> int:
-    pass
+def change_colour(colour) -> int:
+    if colour == light_sensor.reflection():
+        follow_line(colour)
 
 def leave_area() -> int:
     return 0
@@ -121,12 +127,18 @@ def leave_area() -> int:
 def return_to_area() -> int:
     return 0
 
+def abort():
+    robot.stop()
+    crane_motor.run_time(-10, PICKUP_TIME)
+    robot.drive(-PICKUP_SPEED, 0)
+    return 0
+
 if __name__ == "__main__":
     while True:
         print(truckStatus)
         while truckStatus == "drive":
             update_truck_status("drive")
-            follow_line()
+            follow_line(active_colour)
             #print(light_sensor.reflection())
             if(light_sensor.reflection() >= 50):
                 update_truck_status("elevated_pick_up")
