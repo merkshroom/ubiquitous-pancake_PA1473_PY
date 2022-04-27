@@ -54,21 +54,32 @@ def update_truck_status(status):
         ev3.screen.print(truckStatus)
     return 0
 
-
-
 def follow_line(colour) -> int:
+    global colour_current
+    global looking_for_colour
+    global truckStatus
     distance_to_next = ultrasonic_sensor.distance()
+    current_rgb_value = light_sensor.rgb()
     if distance_to_next > 120:
-        threshold_angle = (colour + 10) / 2
-        deviation_angle = light_sensor.reflection() - threshold_angle
-        turn_rate = PROPORTIONAL_GAIN * deviation_angle
-        robot.drive(DRIVE_SPEED, turn_rate)
+        if (abs((LINE_DATA[colour]["rgb"][0] - current_rgb_value[0])) < 5 and \
+            abs((LINE_DATA[colour]["rgb"][1] - current_rgb_value[1])) < 5 and \
+                abs((LINE_DATA[colour]["rgb"][2] - current_rgb_value[2])) < 5):
+            robot.drive(DRIVE_SPEED, 0)
+        else:
+            print(light_sensor.reflection())
+            print(light_sensor.rgb())
+            #print(LINE_DATA[colour])
+            colour_diffs = ((LINE_DATA[colour]["rgb"][0] - current_rgb_value[0]), (LINE_DATA[colour]["rgb"][1] - current_rgb_value[2]), (LINE_DATA[colour]["rgb"][2] - current_rgb_value[2]))
+            #print(colour_diffs)
+            threshold_angle = (LINE_DATA[colour]["rgb"][0] + 10) / 2
+            deviation_angle = 10 - (((current_rgb_value[0] + current_rgb_value[1] + current_rgb_value[2]) / 3) - ((colour_diffs[0] + colour_diffs[1] + colour_diffs[2]) / 3)) / 5
+            #print(deviation_angle)
+            turn_rate = PROPORTIONAL_GAIN * deviation_angle
+            robot.drive(DRIVE_SPEED, turn_rate)
     else:
         robot.stop()
         wait(10)
     return 0
-
-
 
 def pick_up_object() -> int:
     global done
@@ -120,11 +131,10 @@ def failed_pick_up() -> int:
     return 0
 
 def change_colour(colour_current, colour_change) -> int:
-    global colour_current
     while colour_change != light_sensor.reflection():
         follow_line(colour_current)
-    colour_current = colour_change
     follow_line(colour_current)
+    return colour_current
 
 def leave_area() -> int:
     return 0
