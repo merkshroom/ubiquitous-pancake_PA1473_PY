@@ -19,12 +19,16 @@ ultrasonic_sensor= UltrasonicSensor(Port.S4)
 ev3 = EV3Brick()
 robot = DriveBase(left_drive, right_drive, wheel_diameter=47, axle_track=128)
 
-BLACK = 10
-RED = 0
-YELLOW = 0
-GREEN = 0
-BLUE = 0
-WHITE = 40
+PINK = (49, 17, 27)
+CENTER_COLOR = (15, 14, 9)
+BLUE = (10, 23, 41)
+GREEN = (9, 29, 14)
+PURPLE = (12, 11, 31)
+BLACK = (5, 5, 5)
+WHITE = (90, 90, 90)
+YELLOW = (None, None, None)
+RED = (None, None, None)
+
 DRIVE_SPEED = 30
 PICKUP_SPEED = 15
 PROPORTIONAL_GAIN = 2.5
