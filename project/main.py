@@ -31,8 +31,8 @@ COLOURS = {
     "white": (60, 70, 70)
 }
 
-COLOUR_TOLERANCE = 10
-DRIVE_SPEED = 30
+COLOUR_TOLERANCE = 5
+DRIVE_SPEED = 15
 PICKUP_SPEED = 15
 PROPORTIONAL_GAIN = 2.5
 PICKUP_TIME = 3000
@@ -58,14 +58,16 @@ def update_truck_status(status):
     return 0
 
 def follow_line(colour) -> int:
-    global colour_current
+    # ev3.screen.print(colour)
+    # ev3.screen.print("following:")
+    # ev3.screen.print(colour)
     global truckStatus
     distance_to_next = ultrasonic_sensor.distance()
     current_rgb_value = light_sensor.rgb()
     if distance_to_next > 120:
-        if (abs((colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE or \
-            abs((colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE or \
-                abs((colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
+        if (abs((colour[0] - current_rgb_value[0])) < 5 and \
+            abs((colour[1] - current_rgb_value[1])) < 5 and \
+                abs((colour[2] - current_rgb_value[2])) < 5):
             robot.drive(DRIVE_SPEED, 0)
         else:
             colour_diffs = ((colour[0] - current_rgb_value[0]), (colour[1] - current_rgb_value[2]), (colour[2] - current_rgb_value[2]))
@@ -127,14 +129,11 @@ def failed_pick_up() -> int:
     return 0
 
 def change_colour(colour_current, colour_change) -> int:
-    current_rgb_value = light_sensor.rgb()
-    while abs((colour_current[0] - current_rgb_value[0])) < COLOUR_TOLERANCE or \
-            abs((colour_current[1] - current_rgb_value[1])) < COLOUR_TOLERANCE or \
-                abs((colour_current[2] - current_rgb_value[2])) < COLOUR_TOLERANCE:
+    while abs((colour_current[0] - light_sensor.rgb()[0])) < COLOUR_TOLERANCE or \
+            abs((colour_current[1] - light_sensor.rgb()[1])) < COLOUR_TOLERANCE or \
+                abs((colour_current[2] - light_sensor.rgb()[2])) < COLOUR_TOLERANCE:
         follow_line(colour_current)
-    print("Found colour_change")
-    robot.turn(-40)
-    follow_line(colour_change)
+    ev3.screen.print(colour_change)
     return colour_change
 
 def leave_area() -> int:
@@ -163,8 +162,19 @@ if __name__ == "__main__":
         print(truckStatus)
         while truckStatus == "drive":
             update_truck_status("drive")
+            if (current_colour != COLOURS["green"]):
+                print("here")
+                current_colour = change_colour(COLOURS["pink"], COLOURS["green"])
+                print("here2")
+            else:
+                print("there")
+                follow_line(current_colour)
             #follow_line(current_colour)
-            current_colour = change_colour(COLOURS["pink"], COLOURS["green"])
+            # if (current_colour != COLOURS["green"]):
+            # current_colour = change_colour(COLOURS["pink"], COLOURS["green"])
+            # follow_line(change_colour(COLOURS["pink"], COLOURS["green"]))
+            # else:
+            # follow_line(current_colour)
             #print(light_sensor.reflection())
             # if(light_sensor.reflection() >= 50):
             #     update_truck_status("elevated_pick_up")
