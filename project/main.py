@@ -31,6 +31,7 @@ COLOURS = {
     "white": (60, 70, 70)
 }
 
+COLOUR_TOLERANCE = 10
 DRIVE_SPEED = 30
 PICKUP_SPEED = 15
 PROPORTIONAL_GAIN = 2.5
@@ -44,7 +45,7 @@ done = False
 craneUp = False
 return_area = False
 truckStatus = "drive"
-current_colour = COLOURS["yellow"]
+current_colour = COLOURS["pink"]
 
 #ev3.reset()
 
@@ -62,12 +63,12 @@ def follow_line(colour) -> int:
     distance_to_next = ultrasonic_sensor.distance()
     current_rgb_value = light_sensor.rgb()
     if distance_to_next > 120:
-        if (abs((COLOURS[colour][0] - current_rgb_value[0])) < 5 and \
-            abs((COLOURS[colour][1] - current_rgb_value[1])) < 5 and \
-                abs((COLOURS[colour][2] - current_rgb_value[2])) < 5):
+        if (abs((colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE or \
+            abs((colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE or \
+                abs((colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
             robot.drive(DRIVE_SPEED, 0)
         else:
-            colour_diffs = ((COLOURS[colour][0] - current_rgb_value[0]), (COLOURS[colour][1] - current_rgb_value[2]), (COLOURS[colour][2] - current_rgb_value[2]))
+            colour_diffs = ((colour[0] - current_rgb_value[0]), (colour[1] - current_rgb_value[2]), (colour[2] - current_rgb_value[2]))
             deviation_angle = 10 - (((current_rgb_value[0] + current_rgb_value[1] + current_rgb_value[2]) / 3) - ((colour_diffs[0] + colour_diffs[1] + colour_diffs[2]) / 3)) / 5
             turn_rate = PROPORTIONAL_GAIN * deviation_angle
             robot.drive(DRIVE_SPEED, turn_rate)
@@ -126,10 +127,15 @@ def failed_pick_up() -> int:
     return 0
 
 def change_colour(colour_current, colour_change) -> int:
-    while colour_change != light_sensor.reflection():
+    current_rgb_value = light_sensor.rgb()
+    while abs((colour_current[0] - current_rgb_value[0])) < COLOUR_TOLERANCE or \
+            abs((colour_current[1] - current_rgb_value[1])) < COLOUR_TOLERANCE or \
+                abs((colour_current[2] - current_rgb_value[2])) < COLOUR_TOLERANCE:
         follow_line(colour_current)
-    follow_line(colour_current)
-    return colour_current
+    print("Found colour_change")
+    robot.turn(-40)
+    follow_line(colour_change)
+    return colour_change
 
 def leave_area() -> int:
     return 0
@@ -157,10 +163,11 @@ if __name__ == "__main__":
         print(truckStatus)
         while truckStatus == "drive":
             update_truck_status("drive")
-            follow_line(current_colour)
+            #follow_line(current_colour)
+            current_colour = change_colour(COLOURS["pink"], COLOURS["green"])
             #print(light_sensor.reflection())
-            if(light_sensor.reflection() >= 50):
-                update_truck_status("elevated_pick_up")
+            # if(light_sensor.reflection() >= 50):
+            #     update_truck_status("elevated_pick_up")
         while truckStatus == "pick_up":
             #update_truck_status("pick_up")
             pick_up_object()
