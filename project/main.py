@@ -132,9 +132,18 @@ def return_to_area() -> int:
     return 0
 
 def abort():
-    robot.stop()
-    crane_motor.run_time(-10, PICKUP_TIME)
-    robot.drive(-PICKUP_SPEED, 0)
+    robot.stop(10)
+    if truckStatus == "elevated_pick_up":
+        crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
+        robot.drive(-PICKUP_SPEED, 0)
+        return_to_area(CENTER_COLOR)
+    elif truckStatus == "pick_up":
+        crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
+        robot.drive(-PICKUP_SPEED, 0)
+        return_to_area(CENTER_COLOR)
+    else:
+        return_to_area(CENTER_COLOR)
+    
     return 0
 
 if __name__ == "__main__":
