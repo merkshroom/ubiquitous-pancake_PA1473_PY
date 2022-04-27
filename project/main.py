@@ -19,15 +19,17 @@ ultrasonic_sensor= UltrasonicSensor(Port.S4)
 ev3 = EV3Brick()
 robot = DriveBase(left_drive, right_drive, wheel_diameter=47, axle_track=128)
 
-PINK = (49, 17, 27)
-CENTER_COLOR = (15, 14, 9)
-BLUE = (10, 23, 41)
-GREEN = (9, 29, 14)
-PURPLE = (12, 11, 31)
-BLACK = (5, 5, 5)
-WHITE = (90, 90, 90)
-YELLOW = (None, None, None)
-RED = (None, None, None)
+COLOURS = {
+    "yellow": (None, None, None),
+    "pink": (56, 19, 24),
+    "center_colour": (15, 14, 9),
+    "blue": (10, 23, 41),
+    "green": (9, 32, 12),
+    "purple": (12, 11, 31),
+    "red": (None, None, None),
+    "black": (5, 5, 5),
+    "white": (60, 70, 70)
+}
 
 DRIVE_SPEED = 30
 PICKUP_SPEED = 15
@@ -42,7 +44,7 @@ done = False
 craneUp = False
 return_area = False
 truckStatus = "drive"
-colour_current = YELLOW
+current_colour = COLOURS["yellow"]
 
 #ev3.reset()
 
@@ -56,24 +58,17 @@ def update_truck_status(status):
 
 def follow_line(colour) -> int:
     global colour_current
-    global looking_for_colour
     global truckStatus
     distance_to_next = ultrasonic_sensor.distance()
     current_rgb_value = light_sensor.rgb()
     if distance_to_next > 120:
-        if (abs((LINE_DATA[colour]["rgb"][0] - current_rgb_value[0])) < 5 and \
-            abs((LINE_DATA[colour]["rgb"][1] - current_rgb_value[1])) < 5 and \
-                abs((LINE_DATA[colour]["rgb"][2] - current_rgb_value[2])) < 5):
+        if (abs((COLOURS[colour][0] - current_rgb_value[0])) < 5 and \
+            abs((COLOURS[colour][1] - current_rgb_value[1])) < 5 and \
+                abs((COLOURS[colour][2] - current_rgb_value[2])) < 5):
             robot.drive(DRIVE_SPEED, 0)
         else:
-            print(light_sensor.reflection())
-            print(light_sensor.rgb())
-            #print(LINE_DATA[colour])
-            colour_diffs = ((LINE_DATA[colour]["rgb"][0] - current_rgb_value[0]), (LINE_DATA[colour]["rgb"][1] - current_rgb_value[2]), (LINE_DATA[colour]["rgb"][2] - current_rgb_value[2]))
-            #print(colour_diffs)
-            threshold_angle = (LINE_DATA[colour]["rgb"][0] + 10) / 2
+            colour_diffs = ((COLOURS[colour][0] - current_rgb_value[0]), (COLOURS[colour][1] - current_rgb_value[2]), (COLOURS[colour][2] - current_rgb_value[2]))
             deviation_angle = 10 - (((current_rgb_value[0] + current_rgb_value[1] + current_rgb_value[2]) / 3) - ((colour_diffs[0] + colour_diffs[1] + colour_diffs[2]) / 3)) / 5
-            #print(deviation_angle)
             turn_rate = PROPORTIONAL_GAIN * deviation_angle
             robot.drive(DRIVE_SPEED, turn_rate)
     else:
@@ -147,13 +142,13 @@ def abort():
     if truckStatus == "elevated_pick_up":
         crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
         robot.drive(-PICKUP_SPEED, 0)
-        return_to_area(CENTER_COLOR)
+        return_to_area(COLOURS["center_colour"])
     elif truckStatus == "pick_up":
         crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
         robot.drive(-PICKUP_SPEED, 0)
-        return_to_area(CENTER_COLOR)
+        return_to_area(COLOURS["center_colour"])
     else:
-        return_to_area(CENTER_COLOR)
+        return_to_area(COLOURS["center_colour"])
     
     return 0
 
