@@ -42,7 +42,7 @@ done = False
 craneUp = False
 return_area = False
 truckStatus = "drive"
-active_colour = YELLOW
+colour_current = YELLOW
 
 #ev3.reset()
 
@@ -85,8 +85,6 @@ def pick_up_object() -> int:
             update_truck_status("drive")
         robot.drive(-PICKUP_SPEED, 0)
         
-        
-        
         #crane_motor.run(-90)
     
     return 0
@@ -121,9 +119,12 @@ def failed_pick_up() -> int:
         print("failed to pick up an item")
     return 0
 
-def change_colour(colour) -> int:
-    if colour == light_sensor.reflection():
-        follow_line(colour)
+def change_colour(colour_current, colour_change) -> int:
+    global colour_current
+    while colour_change != light_sensor.reflection():
+        follow_line(colour_current)
+    colour_current = colour_change
+    follow_line(colour_current)
 
 def leave_area() -> int:
     return 0
@@ -151,7 +152,7 @@ if __name__ == "__main__":
         print(truckStatus)
         while truckStatus == "drive":
             update_truck_status("drive")
-            follow_line(active_colour)
+            follow_line(current_colour)
             #print(light_sensor.reflection())
             if(light_sensor.reflection() >= 50):
                 update_truck_status("elevated_pick_up")
