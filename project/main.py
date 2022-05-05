@@ -21,9 +21,9 @@ robot = DriveBase(left_drive, right_drive, wheel_diameter=47, axle_track=128)
 
 COLOURS = {
     "yellow": (None, None, None),
-    "pink": (56, 19, 24),
+    "pink": (40, 16, 16),#old 56, 19, 24
     "center_colour": (15, 14, 9),
-    "blue": (10, 23, 41),
+    "blue": (10, 23, 22),#old 10, 23, 41
     "green": (9, 32, 12),
     "purple": (12, 11, 31),
     "red": (None, None, None),
@@ -32,7 +32,7 @@ COLOURS = {
 }
 
 COLOUR_TOLERANCE = 5
-DRIVE_SPEED = 15
+DRIVE_SPEED = 20
 PICKUP_SPEED = 15
 PROPORTIONAL_GAIN = 2.5
 PICKUP_TIME = 3000
@@ -44,33 +44,45 @@ leave = False
 done = False
 craneUp = False
 return_area = False
-truckStatus = "drive"
-current_colour = COLOURS["pink"]
+truck_status = "looking_for_colour"
+current_colour = COLOURS["center_colour"]
+looking_for_colour = COLOURS["green"]
+pick_up_colour = COLOURS["black"]
 
 #ev3.reset()
 
 def update_truck_status(status):
-    global truckStatus
-    if (status != truckStatus):
-        truckStatus = status
-        print(truckStatus)
-        ev3.screen.print(truckStatus)
+    global truck_status
+    if (status != truck_status):
+        truck_status = status
+        print(truck_status)
+        ev3.screen.print(truck_status)
     return 0
 
-def follow_line(colour) -> int:
-    # ev3.screen.print(colour)
-    # ev3.screen.print("following:")
-    # ev3.screen.print(colour)
-    global truckStatus
+def follow_line() -> int:
+    global truck_status
+    global current_colour
+    global looking_for_colour
+
     distance_to_next = ultrasonic_sensor.distance()
     current_rgb_value = light_sensor.rgb()
-    if distance_to_next > 120:
-        if (abs((colour[0] - current_rgb_value[0])) < 5 and \
-            abs((colour[1] - current_rgb_value[1])) < 5 and \
-                abs((colour[2] - current_rgb_value[2])) < 5):
-            robot.drive(DRIVE_SPEED, 0)
+    if (truck_status == "looking_for_colour" and \
+    abs((looking_for_colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
+    abs((looking_for_colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
+    abs((looking_for_colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
+        print("hello")
+        robot.straight(-25) #Needs changing to values that work better
+        robot.turn(75) #Needs changing to values that work better
+        current_colour = looking_for_colour
+        truck_status = "drive"
+
+    if distance_to_next > 250:
+        if (abs((current_colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
+            abs((current_colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
+            abs((current_colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
+            robot.drive(DRIVE_SPEED, 60)
         else:
-            colour_diffs = ((colour[0] - current_rgb_value[0]), (colour[1] - current_rgb_value[2]), (colour[2] - current_rgb_value[2]))
+            colour_diffs = ((current_colour[0] - current_rgb_value[0]), (current_colour[1] - current_rgb_value[2]), (current_colour[2] - current_rgb_value[2]))
             deviation_angle = 10 - (((current_rgb_value[0] + current_rgb_value[1] + current_rgb_value[2]) / 3) - ((colour_diffs[0] + colour_diffs[1] + colour_diffs[2]) / 3)) / 5
             turn_rate = PROPORTIONAL_GAIN * deviation_angle
             robot.drive(DRIVE_SPEED, turn_rate)
@@ -88,14 +100,9 @@ def pick_up_object() -> int:
         if(done == False):
             robot.stop()
             crane_motor.run_time(LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
-            failed_pick_up()
-            done = True
-        if(light_sensor.reflection() >= 50):
+            #failed_pick_up()
             update_truck_status("drive")
-        robot.drive(-PICKUP_SPEED, 0)
-        
-        #crane_motor.run(-90)
-    
+            done = True
     return 0
 
 def pick_up_object_elevated() -> int:
@@ -112,15 +119,12 @@ def pick_up_object_elevated() -> int:
         if(done == False):
             robot.stop()
             crane_motor.run_time(LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
-            failed_pick_up()
             done = True
-        if(light_sensor.reflection() >= 50):
+        if done == True:
+            
             crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
             update_truck_status("drive")
-        robot.drive(-PICKUP_SPEED, 0)
-        
-        #crane_motor.run(-90)
-    
+        #robot.drive(-PICKUP_SPEED, 0)
     return 0
 
 def failed_pick_up() -> int:
@@ -128,13 +132,17 @@ def failed_pick_up() -> int:
         print("failed to pick up an item")
     return 0
 
-def change_colour(colour_current, colour_change) -> int:
-    while abs((colour_current[0] - light_sensor.rgb()[0])) < COLOUR_TOLERANCE or \
-            abs((colour_current[1] - light_sensor.rgb()[1])) < COLOUR_TOLERANCE or \
-                abs((colour_current[2] - light_sensor.rgb()[2])) < COLOUR_TOLERANCE:
-        follow_line(colour_current)
-    ev3.screen.print(colour_change)
-    return colour_change
+def emergency_mode():
+    if not front_button.pressed():
+        print("Dropped item")
+        robot.stop()
+
+def change_colour(new_colour) -> int:
+    global truck_status
+    global looking_for_colour
+    truck_status = "looking_for_colour"
+    looking_for_colour = new_colour
+
 
 def leave_area() -> int:
     return 0
@@ -144,11 +152,11 @@ def return_to_area() -> int:
 
 def abort():
     robot.stop(10)
-    if truckStatus == "elevated_pick_up":
+    if truck_status == "elevated_pick_up":
         crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
         robot.drive(-PICKUP_SPEED, 0)
         return_to_area(COLOURS["center_colour"])
-    elif truckStatus == "pick_up":
+    elif truck_status == "pick_up":
         crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
         robot.drive(-PICKUP_SPEED, 0)
         return_to_area(COLOURS["center_colour"])
@@ -157,35 +165,35 @@ def abort():
     
     return 0
 
+has_changed_colour = False #Just for testing the change_colour function and updated follow_line
+watch = StopWatch()
+
 if __name__ == "__main__":
     while True:
-        print(truckStatus)
-        while truckStatus == "drive":
-            update_truck_status("drive")
-            if (current_colour != COLOURS["green"]):
-                print("here")
-                current_colour = change_colour(COLOURS["pink"], COLOURS["green"])
-                print("here2")
-            else:
-                print("there")
-                follow_line(current_colour)
-            #follow_line(current_colour)
-            # if (current_colour != COLOURS["green"]):
-            # current_colour = change_colour(COLOURS["pink"], COLOURS["green"])
-            # follow_line(change_colour(COLOURS["pink"], COLOURS["green"]))
-            # else:
-            # follow_line(current_colour)
-            #print(light_sensor.reflection())
-            # if(light_sensor.reflection() >= 50):
-            #     update_truck_status("elevated_pick_up")
-        while truckStatus == "pick_up":
+        if watch.time() > 2000 and has_changed_colour == False: #Just for testing the change_colour function and updated follow_line
+            change_colour(COLOURS["green"])
+            has_changed_colour = True
+
+        print(truck_status)
+        while truck_status == "drive" or truck_status == "looking_for_colour":
+            #looking_for_colour = input()
+            follow_line()
+            current_rgb_value = light_sensor.rgb()
+            print(current_rgb_value)
+            if ( \
+                abs((pick_up_colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
+                abs((pick_up_colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
+                abs((pick_up_colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
+                truck_status = "pick_up"
+
+        while truck_status == "pick_up":
             #update_truck_status("pick_up")
             pick_up_object()
-        while truckStatus == "elevated_pick_up":
+        while truck_status == "elevated_pick_up":
             pick_up_object_elevated()
-        while truckStatus == "leave":
+        while truck_status == "leave":
             update_truck_status("leave")
             leave_area()
-        while truckStatus == "return_area":
-            update_truck_status(return_area)
+        while truck_status == "return_area":
+            update_truck_status("return_area")
             return_to_area()
