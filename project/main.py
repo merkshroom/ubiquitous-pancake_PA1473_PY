@@ -2,7 +2,6 @@
 import random
 #import __init__
 import time
-from tkinter import CENTER
 
 from pybricks import robotics
 from pybricks.hubs import EV3Brick
@@ -100,7 +99,7 @@ def pick_up_object() -> int:
     else:
         if(done == False):
             robot.stop()
-            crane_motor.run_time(LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
+            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
             #failed_pick_up()
             update_truck_status("drive")
             done = True
@@ -113,19 +112,20 @@ def pick_up_object_elevated() -> int:
     if not front_button.pressed() and done == False:
         if craneUp == False:
             robot.stop()
-            crane_motor.run_time(LIFT_ELEVATED_PALLET, PICKUP_TIME)
+            crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
             craneUp = True
         robot.drive(PICKUP_SPEED, 0)
     else:
         if(done == False):
             robot.stop()
-            crane_motor.run_time(LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
+            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
             done = True
         if done == True:
             
             crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
+            robot.straight(-100)
+            crane_motor.run_time(LIFT_PALLET, PICKUP_TIME)
             update_truck_status("drive")
-        #robot.drive(-PICKUP_SPEED, 0)
     return 0
 
 def failed_pick_up() -> int:
@@ -158,7 +158,7 @@ def abort():
         robot.drive(-PICKUP_SPEED, 0)
         return_to_area(COLOURS["center_colour"])
     elif truck_status == "pick_up":
-        crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
+        crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
         robot.drive(-PICKUP_SPEED, 0)
         return_to_area(COLOURS["center_colour"])
     else:
@@ -171,7 +171,6 @@ watch = StopWatch()
 
 if __name__ == "__main__":
     while True:
-        ev3.screen.print(current_rgb_value)
         if watch.time() > 2000 and has_changed_colour == False: #Just for testing the change_colour function and updated follow_line
             change_colour(COLOURS["green"])
             has_changed_colour = True
@@ -179,6 +178,11 @@ if __name__ == "__main__":
         print(truck_status)
         while truck_status == "drive" or truck_status == "looking_for_colour":
             
+            if Button.CENTER in ev3.buttons.pressed() :
+                robot.stop()
+                wait(50000)
+
+            ev3.screen.print(light_sensor.rgb())
             #looking_for_colour = input()
             follow_line()
             current_rgb_value = light_sensor.rgb()
@@ -190,21 +194,30 @@ if __name__ == "__main__":
                 truck_status = "pick_up"
 
         while truck_status == "pick_up":
-            if CENTER in ev3.buttons.pressed() :
+            
+            ev3.screen.print(light_sensor.rgb())
+            if Button.CENTER in ev3.buttons.pressed() :
                 robot.stop()
+                wait(50000)
              #update_truck_status("pick_up")
             pick_up_object()
-        while truck_status == "elevated_pick_up":
-            if CENTER in ev3.buttons.pressed():
+        while truck_status == "pick_up":
+            ev3.screen.print(light_sensor.rgb())
+            if Button.CENTER in ev3.buttons.pressed():
                 robot.stop()
+                wait(50000)
             pick_up_object_elevated()
         while truck_status == "leave":
-            if CENTER in ev3.buttons.pressed():
+            ev3.screen.print(light_sensor.rgb())
+            if Button.CENTER in ev3.buttons.pressed():
                 robot.stop()
+                wait(50000)
             update_truck_status("leave")
             leave_area()
         while truck_status == "return_area":
-            if CENTER in ev3.buttons.pressed():
+            ev3.screen.print(light_sensor.rgb())
+            if Button.CENTER in ev3.buttons.pressed():
                 robot.stop()
+                wait(50000)
             update_truck_status("return_area")
             return_to_area()
