@@ -37,7 +37,7 @@ PICKUP_SPEED = 15
 PROPORTIONAL_GAIN = 2.5
 PICKUP_TIME = 3000
 LIFT_PALLET = 25
-LIFT_ELEVATED_PALLET = 50
+LIFT_ELEVATED_PALLET = 30
 drive = True
 pick_up = False
 leave = False
@@ -45,7 +45,7 @@ done = False
 craneUp = False
 return_area = False
 COLOUR_LST = [COLOURS["center_colour"], COLOURS["green"], COLOURS["black"]]
-truck_status = "looking_for_colour"
+truck_status = "elevated_pick_up"
 current_colour = COLOUR_LST[0]
 looking_for_colour = COLOURS["green"]
 pick_up_colour = COLOURS["black"]
@@ -76,6 +76,7 @@ def follow_line() -> int:
         robot.straight(-25) #Needs changing to values that work better
         robot.turn(75) #Needs changing to values that work better
         current_colour = looking_for_colour
+        print(current_colour)
         truck_status = "drive"
         ev3.screen.print("left the area")
         
