@@ -44,10 +44,12 @@ leave = False
 done = False
 craneUp = False
 return_area = False
+COLOUR_LST = [COLOURS["center_colour"], COLOURS["green"], COLOURS["black"]]
 truck_status = "looking_for_colour"
-current_colour = COLOURS["center_colour"]
+current_colour = COLOUR_LST[0]
 looking_for_colour = COLOURS["green"]
 pick_up_colour = COLOURS["black"]
+
 
 #ev3.reset()
 
@@ -75,6 +77,8 @@ def follow_line() -> int:
         robot.turn(75) #Needs changing to values that work better
         current_colour = looking_for_colour
         truck_status = "drive"
+        ev3.screen.print("left the area")
+        
 
     if distance_to_next > 250:
         if (abs((current_colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
@@ -144,7 +148,6 @@ def change_colour(new_colour) -> int:
     truck_status = "looking_for_colour"
     looking_for_colour = new_colour
 
-
 def leave_area() -> int:
     return 0
 
@@ -172,7 +175,7 @@ watch = StopWatch()
 if __name__ == "__main__":
     while True:
         if watch.time() > 2000 and has_changed_colour == False: #Just for testing the change_colour function and updated follow_line
-            change_colour(COLOURS["green"])
+            change_colour(COLOUR_LST[1])
             has_changed_colour = True
 
         print(truck_status)
@@ -181,12 +184,18 @@ if __name__ == "__main__":
             if Button.CENTER in ev3.buttons.pressed() :
                 robot.stop()
                 wait(50000)
-
-            ev3.screen.print(light_sensor.rgb())
+            
             #looking_for_colour = input()
             follow_line()
             current_rgb_value = light_sensor.rgb()
-            print(current_rgb_value)
+
+            # Changes colour when previous colour is found
+            if ( \
+                abs((COLOUR_LST[1][0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
+                abs((COLOUR_LST[1][1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
+                abs((COLOUR_LST[1][2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
+                change_colour(COLOUR_LST[2])
+
             if ( \
                 abs((pick_up_colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
                 abs((pick_up_colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
@@ -194,28 +203,23 @@ if __name__ == "__main__":
                 truck_status = "pick_up"
 
         while truck_status == "pick_up":
-            
-            ev3.screen.print(light_sensor.rgb())
             if Button.CENTER in ev3.buttons.pressed() :
                 robot.stop()
                 wait(50000)
              #update_truck_status("pick_up")
             pick_up_object()
         while truck_status == "pick_up":
-            ev3.screen.print(light_sensor.rgb())
             if Button.CENTER in ev3.buttons.pressed():
                 robot.stop()
                 wait(50000)
             pick_up_object_elevated()
         while truck_status == "leave":
-            ev3.screen.print(light_sensor.rgb())
             if Button.CENTER in ev3.buttons.pressed():
                 robot.stop()
                 wait(50000)
             update_truck_status("leave")
             leave_area()
         while truck_status == "return_area":
-            ev3.screen.print(light_sensor.rgb())
             if Button.CENTER in ev3.buttons.pressed():
                 robot.stop()
                 wait(50000)
