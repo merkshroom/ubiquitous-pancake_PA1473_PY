@@ -10,27 +10,27 @@ from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch
 from pybricks.robotics import DriveBase
 
+ev3 = EV3Brick()
 left_drive=Motor(Port.C, positive_direction = Direction.COUNTERCLOCKWISE, gears = [12, 20])
 right_drive=Motor(Port.B, positive_direction = Direction.COUNTERCLOCKWISE, gears = [12, 20])
+robot = DriveBase(left_drive, right_drive, wheel_diameter=47, axle_track=128)
+
 crane_motor=Motor(Port.A)
 front_button= TouchSensor(Port.S1)
 light_sensor= ColorSensor(Port.S3)
 ultrasonic_sensor= UltrasonicSensor(Port.S4)
-ev3 = EV3Brick()
-robot = DriveBase(left_drive, right_drive, wheel_diameter=47, axle_track=128)
 
 COLOURS = {
-    "yellow": (None, None, None),
-    "pink": (40, 16, 16),#old 56, 19, 24
+    "yellow": (83, 52, 21),
+    "pink": (40, 16, 16), #old 56, 19, 24
     "center_colour": (15, 14, 9),
-    "blue": (10, 23, 22),#old 10, 23, 41
+    "blue": (10, 23, 22), #old 10, 23, 41
     "green": (9, 32, 12),
     "purple": (12, 11, 31),
     "red": (None, None, None),
     "black": (5, 5, 5),
     "white": (60, 70, 70)
 }
-
 COLOUR_LST = [COLOURS["center_colour"], COLOURS["green"], COLOURS["black"]]
 
 COLOUR_TOLERANCE = 5
@@ -41,16 +41,11 @@ PICKUP_TIME = 3000
 LIFT_PALLET = 25
 LIFT_ELEVATED_PALLET = 30
 
-drive = True
-pick_up = False
-leave = False
-done = False
-craneUp = False
-return_area = False
-truck_status = "drive"
 current_colour = COLOUR_LST[0]
 looking_for_colour = COLOURS["green"]
 pick_up_colour = COLOURS["black"]
+
+truck_status = "drive"
 
 
 def update_truck_status(status):
@@ -59,9 +54,8 @@ def update_truck_status(status):
         truck_status = status
         print(truck_status)
         ev3.screen.print(truck_status)
-    return 0
 
-def follow_line() -> int:
+def follow_line():
     global truck_status
     global current_colour
     global looking_for_colour
@@ -93,52 +87,54 @@ def follow_line() -> int:
     else:
         robot.stop()
         wait(10)
-    return 0
 
-def pick_up_object() -> int:
-    global done
+def pick_up_object():
+    pick_up_completed = False
 
-    if not front_button.pressed() and done == False:
-        robot.drive(PICKUP_SPEED, 0)
-    else:
-        if(done == False):
-            robot.stop()
-            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
-            #failed_pick_up()
+    if front_button.pressed() and not pick_up_completed:
+        robot.stop()
+        crane_motor.run_time(LIFT_PALLET, PICKUP_TIME, Stop.HOLD,True) # kolla senare vad det är
+        pick_up_completed = True
+    elif pick_up_completed:
+        robot.straight(-100)
+        if not front_button.pressed():
+            emergency_mode()
+        else:
             update_truck_status("drive")
-            done = True
-    return 0
+    else:
+        robot.drive(PICKUP_SPEED, 0)
 
 def pick_up_object_elevated():
-    global done
-    global craneUp
+    craneUp = False
+    epu_completed = False
 
-    if not front_button.pressed() and done == False:
-        if craneUp == False:
+    if front_button.pressed() and not epu_completed:
+        robot.stop()
+        crane_motor.run_time(LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
+        epu_completed = True
+    elif epu_completed:
+        crane_motor.run_time(LIFT_ELEVATED_PALLET, PICKUP_TIME)
+        robot.straight(-100)
+        crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
+        if not front_button.pressed():
+            emergency_mode()
+        else:
+            update_truck_status("drive")
+    else:
+        if not craneUp:
             robot.stop()
-            crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
+            crane_motor.run_time(LIFT_ELEVATED_PALLET, PICKUP_TIME)
             craneUp = True
         robot.drive(PICKUP_SPEED, 0)
-    else:
-        if(done == False):
-            robot.stop()
-            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
-            done = True
-        if done == True:
-            
-            crane_motor.run_time(-LIFT_ELEVATED_PALLET, PICKUP_TIME)
-            robot.straight(-100)
-            crane_motor.run_time(LIFT_PALLET, PICKUP_TIME)
-            update_truck_status("drive")
 
 def failed_pick_up():
     if not front_button.pressed():
         print("failed to pick up an item")
 
 def emergency_mode():
-    if not front_button.pressed():
-        print("Dropped item")
-        robot.stop()
+    crane_motor.run_target(-30, 0)
+    ev3.speaker.say("Emergency mode")
+    update_truck_status("stopped")
 
 def change_colour(new_colour):
     global truck_status
@@ -165,22 +161,26 @@ def abort():
     else:
         return_to_area(COLOURS["center_colour"])
     
-    return 0
+
+def manual_stop():
+    robot.stop()
+    update_truck_status("stopped")
+    print("Truck has been manually stopped")
+    ev3.screen.print("Truck has been manually stopped")
+    ev3.speaker.say("Manually stopped")
 
 
 if __name__ == "__main__":
     while True:
 
         while truck_status == "drive" or truck_status == "looking_for_colour":
-            
             if Button.CENTER in ev3.buttons.pressed() :
-                robot.stop()
-                wait(50000)
+                manual_stop()
             
             follow_line()
-            current_rgb_value = light_sensor.rgb()
 
             # Changes colour when previous colour is found
+            current_rgb_value = light_sensor.rgb()
             if ( \
                 abs((COLOUR_LST[1][0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
                 abs((COLOUR_LST[1][1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
@@ -195,23 +195,19 @@ if __name__ == "__main__":
 
         while truck_status == "pick_up":
             if Button.CENTER in ev3.buttons.pressed() :
-                robot.stop()
-                wait(50000)
+                manual_stop()
             pick_up_object()
         while truck_status == "pick_up":
-            if Button.CENTER in ev3.buttons.pressed():
-                robot.stop()
-                wait(50000)
+            if Button.CENTER in ev3.buttons.pressed() :
+                manual_stop()
             pick_up_object_elevated()
         while truck_status == "leave":
-            if Button.CENTER in ev3.buttons.pressed():
-                robot.stop()
-                wait(50000)
+            if Button.CENTER in ev3.buttons.pressed() :
+                manual_stop()
             update_truck_status("leave")
             leave_area()
         while truck_status == "return_area":
-            if Button.CENTER in ev3.buttons.pressed():
-                robot.stop()
-                wait(50000)
+            if Button.CENTER in ev3.buttons.pressed() :
+                manual_stop()
             update_truck_status("return_area")
             return_to_area()
