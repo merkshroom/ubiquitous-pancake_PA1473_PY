@@ -31,6 +31,8 @@ COLOURS = {
     "white": (60, 70, 70)
 }
 
+COLOUR_LST = [COLOURS["center_colour"], COLOURS["green"], COLOURS["black"]]
+
 COLOUR_TOLERANCE = 5
 DRIVE_SPEED = 20
 PICKUP_SPEED = 15
@@ -38,20 +40,18 @@ PROPORTIONAL_GAIN = 2.5
 PICKUP_TIME = 3000
 LIFT_PALLET = 25
 LIFT_ELEVATED_PALLET = 30
+
 drive = True
 pick_up = False
 leave = False
 done = False
 craneUp = False
 return_area = False
-COLOUR_LST = [COLOURS["center_colour"], COLOURS["green"], COLOURS["black"]]
-truck_status = "elevated_pick_up"
+truck_status = "drive"
 current_colour = COLOUR_LST[0]
 looking_for_colour = COLOURS["green"]
 pick_up_colour = COLOURS["black"]
 
-
-#ev3.reset()
 
 def update_truck_status(status):
     global truck_status
@@ -72,9 +72,8 @@ def follow_line() -> int:
     abs((looking_for_colour[0] - current_rgb_value[0])) < COLOUR_TOLERANCE and \
     abs((looking_for_colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
     abs((looking_for_colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
-        print("hello")
-        robot.straight(-25) #Needs changing to values that work better
-        robot.turn(75) #Needs changing to values that work better
+        robot.straight(-25)
+        robot.turn(75)
         current_colour = looking_for_colour
         print(current_colour)
         truck_status = "drive"
@@ -104,13 +103,13 @@ def pick_up_object() -> int:
     else:
         if(done == False):
             robot.stop()
-            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
+            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
             #failed_pick_up()
             update_truck_status("drive")
             done = True
     return 0
 
-def pick_up_object_elevated() -> int:
+def pick_up_object_elevated():
     global done
     global craneUp
 
@@ -123,7 +122,7 @@ def pick_up_object_elevated() -> int:
     else:
         if(done == False):
             robot.stop()
-            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME) # kolla senare vad det är
+            crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
             done = True
         if done == True:
             
@@ -131,19 +130,17 @@ def pick_up_object_elevated() -> int:
             robot.straight(-100)
             crane_motor.run_time(LIFT_PALLET, PICKUP_TIME)
             update_truck_status("drive")
-    return 0
 
-def failed_pick_up() -> int:
+def failed_pick_up():
     if not front_button.pressed():
         print("failed to pick up an item")
-    return 0
 
 def emergency_mode():
     if not front_button.pressed():
         print("Dropped item")
         robot.stop()
 
-def change_colour(new_colour) -> int:
+def change_colour(new_colour):
     global truck_status
     global looking_for_colour
     truck_status = "looking_for_colour"
@@ -170,23 +167,16 @@ def abort():
     
     return 0
 
-has_changed_colour = False #Just for testing the change_colour function and updated follow_line
-watch = StopWatch()
 
 if __name__ == "__main__":
     while True:
-        if watch.time() > 2000 and has_changed_colour == False: #Just for testing the change_colour function and updated follow_line
-            change_colour(COLOUR_LST[1])
-            has_changed_colour = True
 
-        print(truck_status)
         while truck_status == "drive" or truck_status == "looking_for_colour":
             
             if Button.CENTER in ev3.buttons.pressed() :
                 robot.stop()
                 wait(50000)
             
-            #looking_for_colour = input()
             follow_line()
             current_rgb_value = light_sensor.rgb()
 
@@ -207,7 +197,6 @@ if __name__ == "__main__":
             if Button.CENTER in ev3.buttons.pressed() :
                 robot.stop()
                 wait(50000)
-             #update_truck_status("pick_up")
             pick_up_object()
         while truck_status == "pick_up":
             if Button.CENTER in ev3.buttons.pressed():
