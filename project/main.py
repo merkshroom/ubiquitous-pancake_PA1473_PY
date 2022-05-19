@@ -1,5 +1,6 @@
 #!/usr/bin/env pybricks-micropython
 import random
+import re
 #import __init__
 import time
 
@@ -46,7 +47,12 @@ looking_for_colour = COLOURS["green"]
 pick_up_colour = COLOURS["black"]
 
 truck_status = "drive"
-
+driving_with_pallet = False
+craneUp = False
+epu_completed = False
+pick_up_completed = False
+missplaced_item_var = False
+not_missplaced = True
 
 def update_truck_status(status):
     global truck_status
@@ -59,6 +65,10 @@ def follow_line():
     global truck_status
     global current_colour
     global looking_for_colour
+    global driving_with_pallet
+
+    if driving_with_pallet is True and not front_button.pressed():
+        failed_pick_up()
 
     distance_to_next = ultrasonic_sensor.distance()
     current_rgb_value = light_sensor.rgb()
@@ -70,8 +80,8 @@ def follow_line():
         robot.turn(75)
         current_colour = looking_for_colour
         print(current_colour)
-        truck_status = "drive"
         ev3.screen.print("left the area")
+        truck_status = "drive"
         
 
     if distance_to_next > 250:
@@ -89,7 +99,7 @@ def follow_line():
         wait(10)
 
 def pick_up_object():
-    pick_up_completed = False
+    global pick_up_completed 
 
     if front_button.pressed() and not pick_up_completed:
         robot.stop()
@@ -100,13 +110,15 @@ def pick_up_object():
         if not front_button.pressed():
             emergency_mode()
         else:
+            pick_up_completed = False
             update_truck_status("drive")
     else:
         robot.drive(PICKUP_SPEED, 0)
+        
 
 def pick_up_object_elevated():
-    craneUp = False
-    epu_completed = False
+    global craneUp
+    global epu_completed
 
     if front_button.pressed() and not epu_completed:
         robot.stop()
@@ -117,8 +129,12 @@ def pick_up_object_elevated():
         robot.straight(-100)
         crane_motor.run_time(-LIFT_PALLET, PICKUP_TIME)
         if not front_button.pressed():
+            ev3.screen.print("Failed")
+            ev3.speaker.say("Failed pickup elevated")
             emergency_mode()
         else:
+            craneUp = False
+            epu_completed = False
             update_truck_status("drive")
     else:
         if not craneUp:
@@ -128,8 +144,11 @@ def pick_up_object_elevated():
         robot.drive(PICKUP_SPEED, 0)
 
 def failed_pick_up():
+    global driving_with_pallet
     if not front_button.pressed():
         print("failed to pick up an item")
+        ev3.screen.print("Failed to pick up")
+        driving_with_pallet = False
 
 def emergency_mode():
     crane_motor.run_target(-30, 0)
@@ -141,6 +160,13 @@ def change_colour(new_colour):
     global looking_for_colour
     truck_status = "looking_for_colour"
     looking_for_colour = new_colour
+
+def missplaced_item():
+    global missplaced_item_var
+    ev3.speaker.say("missplaced Item")
+    missplaced_item_var = True
+    update_truck_status("missplaced_item")
+
 
 def leave_area() -> int:
     return 0
@@ -168,15 +194,27 @@ def manual_stop():
     print("Truck has been manually stopped")
     ev3.screen.print("Truck has been manually stopped")
     ev3.speaker.say("Manually stopped")
+    raise SystemExit
 
 
 if __name__ == "__main__":
     while True:
-
+        # ev3.speaker.say(truck_status)
         while truck_status == "drive" or truck_status == "looking_for_colour":
             if Button.CENTER in ev3.buttons.pressed() :
                 manual_stop()
-            
+            if Button.UP in ev3.buttons.pressed():
+                COLOUR_LST[1] = COLOURS["pink"]
+                ev3.screen.print(COLOUR_LST[1])
+            if Button.DOWN in ev3.buttons.pressed():
+                COLOUR_LST[1] = COLOURS["green"]
+                ev3.screen.print(COLOUR_LST[1])
+            if Button.RIGHT in ev3.buttons.pressed():
+                COLOUR_LST[1] = COLOURS["blue"]
+                ev3.screen.print(COLOUR_LST[1])
+            if Button.LEFT in ev3.buttons.pressed():
+                COLOUR_LST[1] = COLOURS["purple"]
+                ev3.screen.print(COLOUR_LST[1])
             follow_line()
 
             # Changes colour when previous colour is found
@@ -192,22 +230,49 @@ if __name__ == "__main__":
                 abs((pick_up_colour[1] - current_rgb_value[1])) < COLOUR_TOLERANCE and \
                 abs((pick_up_colour[2] - current_rgb_value[2])) < COLOUR_TOLERANCE):
                 truck_status = "pick_up"
-
+        
+        
+        start_pick_up = time.perf_counter()
+    
         while truck_status == "pick_up":
+            
+            ev3.screen.print(truck_status)
             if Button.CENTER in ev3.buttons.pressed() :
-                manual_stop()
+                manual_stop()    
+
             pick_up_object()
-        while truck_status == "pick_up":
+            end_pick_up=time.perf_counter()
+            
+            
+            if not pick_up_completed:
+                
+                if end_pick_up - start_pick_up > 10:
+                    robot.stop()
+                    missplaced_item()
+                    
+            
+            
+            
+        start_pick_up_elevated = time.perf_counter()
+        
+        while truck_status == "elevated_pick_up":
+            ev3.screen.print(truck_status)
             if Button.CENTER in ev3.buttons.pressed() :
                 manual_stop()
             pick_up_object_elevated()
+        
         while truck_status == "leave":
+            ev3.screen.print(truck_status)
             if Button.CENTER in ev3.buttons.pressed() :
                 manual_stop()
             update_truck_status("leave")
             leave_area()
+        
         while truck_status == "return_area":
+            ev3.screen.print(truck_status)
             if Button.CENTER in ev3.buttons.pressed() :
                 manual_stop()
             update_truck_status("return_area")
             return_to_area()
+
+        
